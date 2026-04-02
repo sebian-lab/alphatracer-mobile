@@ -1,0 +1,67 @@
+package com.stock.alphatracer.utils
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+
+/**
+ * Manages authentication tokens using DataStore
+ */
+class TokenManager(private val context: Context) {
+    
+    private val dataStore: DataStore<Preferences> = context.getSharedPreferences(
+        Constants.PREFS_NAME,
+        Context.MODE_PRIVATE
+    ).let { preferences ->
+        DataStore(context, preferences)
+    }
+    
+    companion object {
+        val accessTokenKey = stringPreferencesKey(Constants.ACCESS_TOKEN_KEY)
+        val refreshTokenKey = stringPreferencesKey(Constants.REFRESH_TOKEN_KEY)
+        val userIdKey = stringPreferencesKey(Constants.USER_ID_KEY)
+    }
+    
+    /**
+     * Get current access token
+     */
+    suspend fun getAccessToken(): String? {
+        return dataStore.data.await().first()[accessTokenKey]
+    }
+    
+    /**
+     * Get current refresh token
+     */
+    suspend fun getRefreshToken(): String? {
+        return dataStore.data.await().first()[refreshTokenKey]
+    }
+    
+    /**
+     * Save access and refresh tokens (along with user ID)
+     */
+    suspend fun saveTokens(accessToken: String, refreshToken: String, userId: String = "") {
+        dataStore.edit { preferences ->
+            preferences[accessTokenKey] = accessToken
+            preferences[refreshTokenKey] = refreshToken
+            if (userId.isNotEmpty()) {
+                preferences[userIdKey] = userId
+            }
+        }.await()
+    }
+    
+    /**
+     * Clear all authentication data
+     */
+    suspend fun clearTokens() {
+        dataStore.edit { preferences ->
+            preferences.remove(accessTokenKey)
+            preferences.remove(refreshTokenKey)
+            preferences.remove(userIdKey)
+        }.await()
+    }
+}

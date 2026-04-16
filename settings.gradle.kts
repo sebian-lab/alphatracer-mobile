@@ -22,5 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AlphaTracer"
+rootProject.name = "Alphatracer"
 include(":app")
+ 

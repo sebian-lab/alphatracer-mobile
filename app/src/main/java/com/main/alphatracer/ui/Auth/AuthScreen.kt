@@ -215,6 +215,7 @@ fun AuthScreen(
                     isLoading = true
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
+                            // 1. If registering, perform the registration first
                             if (isRegistering) {
                                 apiService.register(
                                     ApiService.RegisterRequest(
@@ -223,31 +224,25 @@ fun AuthScreen(
                                         fullName.ifEmpty { email.split("@")[0] }
                                     )
                                 )
-                                val loginResponse = apiService.login(email, password)
-                                withContext(Dispatchers.Main) {
-                                    tokenManager.saveToken(loginResponse.access_token)
-                                    isLoading = false
-                                    onLoginSuccess()
-                                }
-                            } else {
-                                val loginResponse = apiService.login(email, password)
-                                withContext(Dispatchers.Main) {
-                                    tokenManager.saveToken(loginResponse.access_token)
-                                    isLoading = false
-                                    onLoginSuccess()
-                                }
                             }
+
+                            // 2. Perform the Login (for both New and Existing users)
+                            val loginResponse = apiService.login(email, password)
+
+                            // 3. Switch to Main to update UI and Save Data
+                            withContext(Dispatchers.Main) {
+                                tokenManager.saveUserDetails(
+                                    token = loginResponse.access_token,
+                                    name = fullName.ifEmpty { email.split("@")[0] },
+                                    email = email
+                                )
+                                isLoading = false
+                                onLoginSuccess()
+                            }
+
                         } catch (e: HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
-                            val message = errorBody?.let {
-                                try {
-                                    if (it.contains("detail")) {
-                                        it.substringAfter("detail\":\"").substringBefore("\"")
-                                    } else it
-                                } catch (ex: Exception) {
-                                    "Authentication failed"
-                                }
-                            } ?: "Authentication failed"
+                            val message = parseError(errorBody) // Cleaned up helper below
                             withContext(Dispatchers.Main) {
                                 errorMsg = message
                                 isLoading = false
@@ -257,6 +252,19 @@ fun AuthScreen(
                                 errorMsg = e.message ?: "Authentication failed"
                                 isLoading = false
                             }
+                        }
+                    }
+
+                    // Helper to keep your coroutine readable
+                    fun parseError(errorBody: String?): String {
+                        return try {
+                            if (errorBody?.contains("detail") == true) {
+                                errorBody.substringAfter("detail\":\"").substringBefore("\"")
+                            } else {
+                                errorBody ?: "Authentication failed"
+                            }
+                        } catch (ex: Exception) {
+                            "Authentication failed"
                         }
                     }
                 },
@@ -291,7 +299,7 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-      
+
             TextButton(
                 onClick = { isRegistering = !isRegistering; errorMsg = null },
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -303,5 +311,17 @@ fun AuthScreen(
                 )
             }
         }
+    }
+}
+
+private fun parseError(errorBody: String?): String {
+    return try {
+        if (errorBody?.contains("detail") == true) {
+            errorBody.substringAfter("detail\":\"").substringBefore("\"")
+        } else {
+            errorBody ?: "Authentication failed"
+        }
+    } catch (ex: Exception) {
+        "Authentication failed"
     }
 }

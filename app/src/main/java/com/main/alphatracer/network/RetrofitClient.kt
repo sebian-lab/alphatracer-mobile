@@ -1,14 +1,14 @@
 package com.main.alphatracer.network
 
-import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://motion-skirts-passage-grants.trycloudflare.com/"
+    private const val BASE_URL = "https://twelve-sale-asp-last.trycloudflare.com/"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)

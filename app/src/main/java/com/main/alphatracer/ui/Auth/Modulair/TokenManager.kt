@@ -14,9 +14,7 @@ class TokenManager private constructor(context: Context) {
 
     fun getToken(): String? = prefs.getString("access_token", null)
 
-    fun clear() {
-        prefs.edit().remove("access_token").apply()
-    }
+
 
     companion object {
         @Volatile
@@ -27,5 +25,18 @@ class TokenManager private constructor(context: Context) {
                 instance ?: TokenManager(context!!).also { instance = it }
             }
         }
+    }
+    fun getUserName(): String = prefs.getString("user_name", "User") ?: "User"
+    fun getUserEmail(): String = prefs.getString("user_email", "") ?: ""
+
+    fun saveUserDetails(token: String, name: String, email: String) {
+        prefs.edit()
+            .putString("access_token", token)
+            .putString("user_name", name)
+            .putString("user_email", email)
+            .apply()
+    }
+    fun clear() {
+        prefs.edit().clear().apply()
     }
 }

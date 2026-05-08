@@ -5,7 +5,12 @@ data class PortfolioResponse(
     val current_value: Double,
     val holdings: List<HoldingResponse>
 )
-
+data class Holding(
+    val ticker: String,
+    val name: String,
+    val quantity: Int,
+    val currentPrice: Double
+)
 data class HoldingResponse(
     val stock_ticker: String,
     val stock_name: String,

@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")

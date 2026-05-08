@@ -2,7 +2,7 @@ package com.main.alphatracer.ui.user
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import com.main.alphatracer.ui.Auth.Modulair.TokenManager
+import com.main.alphatracer.Auth.Modulair.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 sealed class UserUiState {

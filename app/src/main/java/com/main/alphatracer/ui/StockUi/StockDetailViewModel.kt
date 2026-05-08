@@ -3,13 +3,12 @@ package com.main.alphatracer.ui.StockUi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.main.alphatracer.Auth.Modulair.TokenManager
 import com.main.alphatracer.data.PortfolioRepository
 import com.main.alphatracer.data.StockRepository
 import com.main.alphatracer.model.MarketAnalysisResponse
 import com.main.alphatracer.model.MetricsResponse
 import com.main.alphatracer.model.TransactionRequest
-import com.main.alphatracer.ui.Auth.Modulair.TokenManager
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

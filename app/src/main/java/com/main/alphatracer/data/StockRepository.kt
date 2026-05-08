@@ -18,8 +18,6 @@ class StockRepository {
     }
 
 
-    suspend fun getMetrics(ticker: String): MetricsResponse = api.getStockMetrics(ticker)
-    suspend fun getMarketAnalysis(ticker: String): MarketAnalysisResponse = api.getMarketAnalysis(ticker)
     suspend fun searchStocks(query: String, limit: Int = 20): List<StockSearchResult> {
         return api.searchStocks(query, limit)
     }

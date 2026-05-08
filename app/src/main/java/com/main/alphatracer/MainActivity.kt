@@ -3,7 +3,6 @@ package com.stock.alphatracer
 
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
@@ -26,10 +25,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.compose.AppTheme
+import com.main.alphatracer.Auth.Modulair.TokenManager
 import com.main.alphatracer.ui.Alert.scheduleStockWorker
-import com.main.alphatracer.ui.Auth.Modulair.TokenManager
 import com.main.alphatracer.ui.Portfolio.PortfolioUi
 import com.main.alphatracer.ui.StockUi.StockDetailScreen
 import com.main.alphatracer.ui.market.MarketScreen
@@ -40,7 +40,7 @@ import com.stock.alphatracer.ui.viewmodel.MainViewModel
 import com.stock.alphatracer.ui.viewmodel.Screen
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
 
 
                 if (!isLoggedIn) {
+
                     AuthScreen(
                         onLoginSuccess = { mainViewModel.login() },
                         tokenManager = TokenManager.getInstance()
@@ -76,7 +77,11 @@ class MainActivity : ComponentActivity() {
                                 Screen.values().forEach { screen ->
                                     NavigationBarItem(
                                         selected = currentScreen == screen,
-                                        onClick = { mainViewModel.setCurrentScreen(screen) },
+                                        onClick = {
+                                                mainViewModel.clearSelectedTicker()
+                                                mainViewModel.setCurrentScreen(screen)
+                                                  },
+
                                         label = { Text(screen.name) },
                                         icon = {
                                             Icon(
@@ -118,15 +123,12 @@ class MainActivity : ComponentActivity() {
                             selectedTicker?.let { ticker ->
                                 StockDetailScreen(
                                     ticker = ticker,
-                                    onBack = { mainViewModel.clearSelectedTicker() }
+                                    onBack = { mainViewModel.clearSelectedTicker()
+
+                                    }
                                 )
                             }
-                            selectedTicker?.let { ticker ->
-                                StockDetailScreen(
-                                    ticker = ticker,
-                                    onBack = { mainViewModel.clearSelectedTicker() }
-                                )
-                            }
+
 
                         }
                     }

@@ -1,7 +1,10 @@
 package com.stock.alphatracer.ui.screens
 
+import android.util.Log
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,12 +40,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
+import com.main.alphatracer.Auth.Modulair.BiometricAuthenticator
+import com.main.alphatracer.Auth.Modulair.BiometricAuthenticator.authenticate
+import com.main.alphatracer.Auth.Modulair.TokenManager
 import com.main.alphatracer.R
 import com.main.alphatracer.network.ApiService
 import com.main.alphatracer.network.RetrofitClient
-import com.main.alphatracer.ui.Auth.Modulair.TokenManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -52,6 +60,45 @@ fun AuthScreen(
     tokenManager: TokenManager,
     apiService: ApiService = RetrofitClient.apiService
 ) {
+    val context = LocalContext.current
+
+    val hasToken = tokenManager.getToken() != null
+    val biometricEnabled = tokenManager.isBiometricEnabled()
+
+    var isBiometricUnlocking by remember { mutableStateOf(false) }
+
+
+    val activity = context as? FragmentActivity
+
+    LaunchedEffect(hasToken, biometricEnabled) {
+        if (hasToken && biometricEnabled && !isBiometricUnlocking && activity != null) {
+            isBiometricUnlocking = true
+            delay(300)
+
+            BiometricAuthenticator.authenticate(
+                activity = activity,
+                title = "Unlock AlphaTracer",
+                onSuccess = {
+                    isBiometricUnlocking = false
+                    onLoginSuccess()
+                },
+                onFailure = {
+                    isBiometricUnlocking = false
+
+                }
+            )
+        }
+    }
+
+    if (isBiometricUnlocking) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+
+
     var isRegistering by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -59,10 +106,9 @@ fun AuthScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
 
-    LocalContext.current
 
     fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
     fun isValidPassword(password: String): Boolean {
@@ -215,7 +261,7 @@ fun AuthScreen(
                     isLoading = true
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            // 1. If registering, perform the registration first
+
                             if (isRegistering) {
                                 apiService.register(
                                     ApiService.RegisterRequest(
@@ -226,23 +272,54 @@ fun AuthScreen(
                                 )
                             }
 
-                            // 2. Perform the Login (for both New and Existing users)
+
                             val loginResponse = apiService.login(email, password)
 
-                            // 3. Switch to Main to update UI and Save Data
+
                             withContext(Dispatchers.Main) {
-                                tokenManager.saveUserDetails(
-                                    token = loginResponse.access_token,
-                                    name = fullName.ifEmpty { email.split("@")[0] },
-                                    email = email
-                                )
+                                Log.d("AuthScreen", "Login successful - saving token and navigating")
+
+                                try {
+                                    tokenManager.saveUserDetails(
+                                        token = loginResponse.access_token,
+                                        name = fullName.ifEmpty { email.split("@")[0] },
+                                        email = email
+                                    )
+                                    Log.d("AuthScreen", "Token saved successfully")
+                                } catch (e: Exception) {
+                                    Log.e("AuthScreen", "Failed to save token", e)
+                                    errorMsg = "Failed to save session"
+                                    isLoading = false
+                                    return@withContext
+                                }
                                 isLoading = false
-                                onLoginSuccess()
+
+
+                                if (!tokenManager.isBiometricEnabled() && tokenManager.isBiometricAvailable(context) && activity != null) {
+                                    authenticate(
+                                        activity = activity,
+                                        title = "Enable Biometric Login",
+                                        onSuccess = {
+                                            tokenManager.setBiometricEnabled(true)
+                                            onLoginSuccess()
+                                        },
+                                        onFailure = {
+
+                                            onLoginSuccess()
+                                        }
+                                    )
+                                } else {
+                                    onLoginSuccess()
+                                }
+
+
+
                             }
+
 
                         } catch (e: HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
-                            val message = parseError(errorBody) // Cleaned up helper below
+                            val message = parseError(errorBody)
                             withContext(Dispatchers.Main) {
                                 errorMsg = message
                                 isLoading = false

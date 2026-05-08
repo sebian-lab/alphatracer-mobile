@@ -1,29 +1,56 @@
 package com.main.alphatracer.ui.StockUi
 
-import com.main.alphatracer.model.MarketAnalysisResponse
-import com.main.alphatracer.model.MetricsResponse
-import com.main.alphatracer.model.QuoteResponse
-import com.main.alphatracer.model.SignalResponse
-import com.main.alphatracer.ui.Alert.SetAlertDialog
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.filled.AddChart
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +59,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.main.alphatracer.model.MarketAnalysisResponse
+import com.main.alphatracer.model.MetricsResponse
+import com.main.alphatracer.model.QuoteResponse
+import com.main.alphatracer.model.SignalResponse
+import com.main.alphatracer.ui.Alert.Data.AlertDataStore
+import com.main.alphatracer.ui.Alert.SetAlertDialog
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
@@ -41,11 +74,11 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineSpec
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-
 import com.patrykandpatrick.vico.core.common.shader.ColorShader
-import com.patrykandpatrick.vico.core.cartesian.Zoom
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,9 +171,13 @@ fun StockDetailContent(
     analysis: MarketAnalysisResponse,
     onAddToPortfolio: (ticker: String, quantity: Int, price: Double) -> Unit
 ) {
+    var selectedTab by remember { mutableStateOf("Analysis") }
     val quote = analysis.quote
     var showAddDialog by remember { mutableStateOf(false) }
     var showAlertDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val alertDataStore = remember { AlertDataStore(context) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -156,6 +193,7 @@ fun StockDetailContent(
                 ),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -269,46 +307,113 @@ fun StockDetailContent(
                 }
             }
         }
+        // 3. Segment Selector Bar
+        item {
+            val tabs = listOf("Fundamental", "Analysis", "Options")
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(50.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    tabs.forEach { tab ->
+                        val isSelected = selectedTab == tab
+                        val backgroundTargetColor = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            Color.Transparent
+                        }
+                        val textTargetColor = if (isSelected) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
 
-        item {
-            Text(
-                text = "Key Metrics",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        item {
-            MetricsGrid(metrics, quote)
+                        // Smooth transition animations
+                        val backgroundColor by androidx.compose.animation.animateColorAsState(
+                            targetValue = backgroundTargetColor,
+                            label = "tab_bg_color"
+                        )
+                        val textColor by androidx.compose.animation.animateColorAsState(
+                            targetValue = textTargetColor,
+                            label = "tab_text_color"
+                        )
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            color = backgroundColor,
+                            shape = RoundedCornerShape(50.dp),
+                            onClick = { selectedTab = tab }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = tab,
+                                    color = textColor,
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        item {
-            Text(
-                text = "Technical Analysis",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        item {
-            TechnicalDetailsCard(analysis)
+        // 4. Dynamic Content Area (Changes based on selection)
+        when (selectedTab) {
+            "Fundamental" -> {
+                item {
+                    Text(
+                        text = "Key Metrics",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                item {
+                    MetricsGrid(metrics, quote)
+                }
+            }
+            "Analysis" -> {
+                item {
+                    Text(
+                        text = "Technical Analysis",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                item {
+                    TechnicalDetailsCard(analysis)
+                }
+                item {
+                    SignalCard(analysis.signal)
+                }
+            }
+            "Options" -> {
+                item {
+                    Text(
+                        text = "Volatility & Volume",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                item {
+                    VolatilityVolumeCard(analysis)
+                }
+            }
         }
 
-        item {
-            Text(
-                text = "Volatility & Volume",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        item {
-            VolatilityVolumeCard(analysis)
-        }
 
-        item {
-            SignalCard(analysis.signal)
-        }
 
         item {
             Button(
@@ -352,12 +457,13 @@ fun StockDetailContent(
 
 
 
+
     if (showAlertDialog) {
         SetAlertDialog(
-            ticker = "BTC",
+            ticker = quote.ticker,
             onDismiss = { showAlertDialog = false },
             onSave = { rule ->
-
+                scope.launch { alertDataStore.addRule(rule) }
                 showAlertDialog = false
             }
         )

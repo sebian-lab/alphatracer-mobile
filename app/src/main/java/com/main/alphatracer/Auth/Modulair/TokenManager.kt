@@ -1,13 +1,24 @@
-package com.main.alphatracer.ui.Auth.Modulair
+package com.main.alphatracer.Auth.Modulair
 
 
-
+// hoger
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.biometric.BiometricManager
+
 
 class TokenManager private constructor(context: Context) {
     private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("auth", Context.MODE_PRIVATE)
-
+    fun isBiometricEnabled(): Boolean = prefs.getBoolean("biometric_enabled", false)
+    fun isBiometricAvailable(context: Context): Boolean {
+        val biometricManager = BiometricManager.from(context)
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.BIOMETRIC_WEAK
+        return biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+    }
+    fun setBiometricEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("biometric_enabled", enabled).apply()
+    }
     fun saveToken(token: String) {
         prefs.edit().putString("access_token", token).apply()
     }

@@ -19,7 +19,10 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class AlertDataStore(private val context: Context) {
 
     private val RULES_KEY = stringPreferencesKey("rules_list")
-
+    suspend fun addRule(newRule: AlertRule) {
+        val current = getRules()
+        saveRules(current + newRule)
+    }
     suspend fun saveRules(rules: List<AlertRule>) {
         val json = Json.encodeToString(rules)
         context.dataStore.edit { prefs ->

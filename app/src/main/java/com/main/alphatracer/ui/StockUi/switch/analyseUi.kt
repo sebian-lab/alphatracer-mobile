@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,57 +20,99 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.main.alphatracer.model.MarketAnalysisResponse
+import com.main.alphatracer.model.MetricsResponse
+import com.main.alphatracer.ui.StockUi.MetricsGrid
+import com.main.alphatracer.ui.StockUi.SignalCard
+import com.main.alphatracer.ui.StockUi.TechnicalDetailsCard
+import com.main.alphatracer.ui.StockUi.VolatilityVolumeCard
 
+enum class StockDetailTab(val title: String) {
+    Fundamental("Fundamental"),
+    Analysis("Analysis"),
+    Options("Options")
+}
 @Composable
 fun AnalysisTypeSelector(
-    selectedType: String,
-    onTypeSelected: (String) -> Unit
+    selectedTab: StockDetailTab,
+    onTabSelected: (StockDetailTab) -> Unit,
+    metrics: MetricsResponse,
+    analysis: MarketAnalysisResponse
 ) {
-    val types = listOf("Fundamental", "Analysis", "Options")
+    // 3. Segment Selector Bar
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        color = Color(0xFF1A1A1A), // Dark background like your image
-        shape = RoundedCornerShape(50.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            shape = RoundedCornerShape(50.dp)
         ) {
-            types.forEach { type ->
-                val isSelected = selectedType == type
-                val backgroundColor by animateColorAsState(
-                    targetValue = if (isSelected) Color(0xFF444444) else Color.Transparent,
-                    label = "bg"
-                )
-                val textColor by animateColorAsState(
-                    targetValue = if (isSelected) Color.White else Color.Gray,
-                    label = "text"
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StockDetailTab.entries.forEach { tab ->
+                    val isSelected = selectedTab == tab
+                    val backgroundTargetColor = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        Color.Transparent
+                    }
+                    val textTargetColor = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
 
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(40.dp)
-                        .clickable { onTypeSelected(type) },
-                    color = backgroundColor,
-                    shape = RoundedCornerShape(50.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = type,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
+                    // Smooth transition animations
+                    val backgroundColor by androidx.compose.animation.animateColorAsState(
+                        targetValue = backgroundTargetColor,
+                        label = "tab_bg_color"
+                    )
+                    val textColor by androidx.compose.animation.animateColorAsState(
+                        targetValue = textTargetColor,
+                        label = "tab_text_color"
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp),
+                        color = backgroundColor,
+                        shape = RoundedCornerShape(50.dp),
+                        onClick = { onTabSelected(tab) }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = tab.title,
+                                color = textColor,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }
         }
+
+
+    // 4. Dynamic Content Area (Changes based on selection)
+    when (selectedTab) {
+        StockDetailTab.Fundamental -> {
+            Text("Key Metrics", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            MetricsGrid(metrics, analysis.quote)
+        }
+        StockDetailTab.Analysis -> {
+            Text("Technical Analysis", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            TechnicalDetailsCard(analysis)
+            SignalCard(analysis.signal)
+        }
+        StockDetailTab.Options -> {
+            Text("Volatility & Volume", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            VolatilityVolumeCard(analysis)
+        }
+        }
     }
-}

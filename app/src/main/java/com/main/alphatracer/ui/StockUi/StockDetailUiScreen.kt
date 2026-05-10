@@ -65,6 +65,7 @@ import com.main.alphatracer.model.QuoteResponse
 import com.main.alphatracer.model.SignalResponse
 import com.main.alphatracer.ui.Alert.Data.AlertDataStore
 import com.main.alphatracer.ui.Alert.SetAlertDialog
+import com.main.alphatracer.ui.StockUi.switch.StockDetailTab
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
@@ -79,7 +80,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.common.shader.ColorShader
 import kotlinx.coroutines.launch
-
+import com.main.alphatracer.ui.StockUi.switch.AnalysisTypeSelector
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockDetailScreen(
@@ -171,7 +172,7 @@ fun StockDetailContent(
     analysis: MarketAnalysisResponse,
     onAddToPortfolio: (ticker: String, quantity: Int, price: Double) -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf("Analysis") }
+    var selectedTab by remember { mutableStateOf(StockDetailTab.Analysis) }
     val quote = analysis.quote
     var showAddDialog by remember { mutableStateOf(false) }
     var showAlertDialog by remember { mutableStateOf(false) }
@@ -307,110 +308,14 @@ fun StockDetailContent(
                 }
             }
         }
-        // 3. Segment Selector Bar
         item {
-            val tabs = listOf("Fundamental", "Analysis", "Options")
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(50.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    tabs.forEach { tab ->
-                        val isSelected = selectedTab == tab
-                        val backgroundTargetColor = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            Color.Transparent
-                        }
-                        val textTargetColor = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-
-                        // Smooth transition animations
-                        val backgroundColor by androidx.compose.animation.animateColorAsState(
-                            targetValue = backgroundTargetColor,
-                            label = "tab_bg_color"
-                        )
-                        val textColor by androidx.compose.animation.animateColorAsState(
-                            targetValue = textTargetColor,
-                            label = "tab_text_color"
-                        )
-
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(40.dp),
-                            color = backgroundColor,
-                            shape = RoundedCornerShape(50.dp),
-                            onClick = { selectedTab = tab }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = tab,
-                                    color = textColor,
-                                    fontSize = 14.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 4. Dynamic Content Area (Changes based on selection)
-        when (selectedTab) {
-            "Fundamental" -> {
-                item {
-                    Text(
-                        text = "Key Metrics",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                item {
-                    MetricsGrid(metrics, quote)
-                }
-            }
-            "Analysis" -> {
-                item {
-                    Text(
-                        text = "Technical Analysis",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                item {
-                    TechnicalDetailsCard(analysis)
-                }
-                item {
-                    SignalCard(analysis.signal)
-                }
-            }
-            "Options" -> {
-                item {
-                    Text(
-                        text = "Volatility & Volume",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                item {
-                    VolatilityVolumeCard(analysis)
-                }
-            }
+            // Logic moved to analyzeUi package
+            AnalysisTypeSelector(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+                metrics = metrics,
+                analysis = analysis
+            )
         }
 
 
@@ -469,6 +374,8 @@ fun StockDetailContent(
         )
     }
 }
+
+
 
 @Composable
 fun MetricsGrid(metrics: MetricsResponse, quote: QuoteResponse) {

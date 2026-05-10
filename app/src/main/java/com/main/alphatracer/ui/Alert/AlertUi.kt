@@ -51,7 +51,7 @@ fun SetAlertDialog(
         title = { Text("Set Alert for $ticker") },
         text = {
             Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Column() {
                     RadioButton(selected = useRolling, onClick = { useRolling = true })
                     Text("Rolling days back", modifier = Modifier.padding(end = 16.dp))
                     RadioButton(selected = !useRolling, onClick = { useRolling = false })

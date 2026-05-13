@@ -46,7 +46,12 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             if (!rule.isActive()) continue
 
             try {
-                val candles = fetchCandlesForRange(rule.ticker, "1m" ,rule.startDate, rule.endDate)
+                val rollingEndDate = LocalDate.now()
+                val rollingStartDate = rollingEndDate.minusDays(rule.rollingDays.toLong())
+
+
+                val candles = fetchCandlesForRange(rule.ticker, "1h", rollingStartDate, rollingEndDate)
+
                 if (candles.size < 2) continue
 
                 val maxPrice = candles.maxOf { it.close }
@@ -58,8 +63,8 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                     showNotification(
                         ticker = rule.ticker,
                         dropPercent = dropFromMax,
-                        startDate = LocalDate.now(),
-                        endDate = rule.endDate
+                        startDate = rollingStartDate,
+                        endDate = rollingEndDate
                     )
 
                     val updatedRule = rule.copy(lastTriggeredAt = now)
@@ -96,41 +101,54 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
 
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    private fun showNotification(ticker: String, dropPercent: Double, startDate: LocalDate, endDate: LocalDate) {
 
-        val channelId = "alert_channel"
-        val notificationId = ticker.hashCode()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Stock Alerts",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Triggered when your stock drops by a set percentage"
-            }
-            val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
 
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
-            .setSmallIcon(R.drawable.ic_dialog_alert)
-            .setContentTitle("📉 Alert: $ticker dropped!")
-            .setContentText(String.format("Down %.1f%% between %s and %s", dropPercent, startDate, endDate))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+private fun createNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            "alert_channel",
+            "Stock Alerts",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply { description = "Triggered when your stock drops by a set percentage" }
+
+        val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
     }
+}
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+private fun showNotification(ticker: String, dropPercent: Double, startDate: LocalDate, endDate: LocalDate) {
+    createNotificationChannel()
+
+    val notification = NotificationCompat.Builder(applicationContext, "alert_channel")
+        .setSmallIcon(R.drawable.ic_dialog_alert)
+        .setContentTitle("📉 Alert: $ticker dropped!")
+        .setContentText("Down ${String.format("%.1f", dropPercent)}% between $startDate and $endDate")
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setAutoCancel(true)
+        .build()
+
+    if (ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+        NotificationManagerCompat.from(applicationContext).notify(ticker.hashCode(), notification)
+    }
+}
 }
 
 fun scheduleStockWorker(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             if (context is Activity) {
-                ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+                ActivityCompat.requestPermissions(
+                    context,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
             }
             return
         }
@@ -149,26 +167,5 @@ fun scheduleStockWorker(context: Context) {
         ExistingPeriodicWorkPolicy.KEEP,
         periodicRequest
     )
-    sendTestAlert(context)
-}
-@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-private fun sendTestAlert(context: Context) {
-    val channelId = "alert_channel"
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(
-            channelId,
-            "Stock Alerts",
-            NotificationManager.IMPORTANCE_HIGH
-        )
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
-    }
-    val notification = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_dialog_info)  // drawable to be implemented
-        .setContentTitle("Alert System Active")
-        .setContentText("Worker scheduled successfully.")
-        .setPriority(NotificationCompat.PRIORITY_HIGH)
-        .build()
 
-    NotificationManagerCompat.from(context).notify(999, notification)
 }

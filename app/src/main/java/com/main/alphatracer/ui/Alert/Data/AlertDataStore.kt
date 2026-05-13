@@ -36,4 +36,13 @@ class AlertDataStore(private val context: Context) {
     }
 
     suspend fun getRules(): List<AlertRule> = getRulesFlow().first()
+    suspend fun updateRule(updatedRule: AlertRule) {
+        val current = getRules()
+        saveRules(current.map { if (it.id == updatedRule.id) updatedRule else it })
+    }
+
+    suspend fun deleteRule(ruleId: String) {
+        val current = getRules()
+        saveRules(current.filterNot { it.id == ruleId })
+    }
 }

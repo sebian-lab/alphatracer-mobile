@@ -118,15 +118,28 @@ private fun HoldingItem(holding: Holding, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(holding.ticker, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text(holding.name, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    holding.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,maxLines = 1, // Keep it on one line
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("$${String.format("%.2f", holding.currentPrice)}", fontWeight = FontWeight.SemiBold)
-                Text("${holding.quantity} shares", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "$${String.format("%.2f", holding.currentPrice)}",
+                    fontWeight = FontWeight.SemiBold,
+                    softWrap = false)
+                Text(
+                    "${holding.quantity} shares",
+                    style = MaterialTheme.typography.bodySmall,
+                    softWrap = false)
                 val total = holding.quantity * holding.currentPrice
-                Text("$${String.format("%,.2f", total)}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "$${String.format("%,.2f", total)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    softWrap = false)
             }
         }
     }

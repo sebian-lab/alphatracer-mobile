@@ -3,8 +3,10 @@ package com.main.alphatracer.ui.Alert
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -31,12 +33,13 @@ import java.time.ZoneId
 @Composable
 fun SetAlertDialog(
     ticker: String,
+    initialRule: AlertRule? = null,
     onDismiss: () -> Unit,
     onSave: (AlertRule) -> Unit
 ) {
     var rollingDays by remember { mutableStateOf("3") }
-    var threshold by remember { mutableStateOf("5.0") }
-    var useRolling by remember { mutableStateOf(true) }
+    var threshold by remember { mutableStateOf(initialRule?.thresholdPercent?.toString() ?: "5.0") }
+    var useRolling by remember { mutableStateOf(initialRule == null) }
 
     // 1. Define the states for the pickers
     val startDateState = rememberDatePickerState(
@@ -48,25 +51,45 @@ fun SetAlertDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set Alert for $ticker") },
+        title = { Text(if (initialRule == null) "Set Alert for $ticker" else "Edit Alert for $ticker") },
         text = {
             Column {
-                Column() {
-                    RadioButton(selected = useRolling, onClick = { useRolling = true })
-                    Text("Rolling days back", modifier = Modifier.padding(end = 16.dp))
-                    RadioButton(selected = !useRolling, onClick = { useRolling = false })
-                    Text("Fixed date range")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
 
-                if (useRolling) {
+                Spacer(modifier = Modifier.height(8.dp))
+                if (initialRule == null) {
+                    Column {
+                        Text("How many days in the past should we monitor?")
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = rollingDays,
+                            onValueChange = { rollingDays = it },
+                            label = { Text("Days back (Rolling)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = threshold,
+                            onValueChange = { threshold = it },
+                            label = { Text("Drop threshold (%)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        )
+                    }
+                }
+                if (useRolling && initialRule == null) {
                     OutlinedTextField(
                         value = rollingDays,
                         onValueChange = { rollingDays = it },
-                        label = { Text("Days back (e.g., 3)") },
+                        label = { Text("Days back") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
-                } else {
+                }
+
+                 else {
 
                     Text("Start Date")
                     DatePicker(state = startDateState, showModeToggle = false)
@@ -75,37 +98,22 @@ fun SetAlertDialog(
                     DatePicker(state = endDateState, showModeToggle = false)
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = threshold,
-                    onValueChange = { threshold = it },
-                    label = { Text("Drop threshold (%)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
+
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    val days = rollingDays.toIntOrNull() ?: 3
-                    val now = LocalDate.now()
-
-
-                    val selectedStart = startDateState.selectedDateMillis?.toLocalDate() ?: now
-                    val selectedEnd = endDateState.selectedDateMillis?.toLocalDate() ?: now
-
-                    val (start, end) = if (useRolling) {
-                        now.minusDays(days.toLong()) to now
-                    } else {
-                        selectedStart to selectedEnd
-                    }
-
-                    onSave(AlertRule(
+                    val days = rollingDays.toLongOrNull() ?: 2L
+                    val rule = initialRule?.copy(
+                        thresholdPercent = threshold.toDoubleOrNull() ?: 5.0,
+                        rollingDays = days.toInt()
+                    ) ?: AlertRule(
                         ticker = ticker,
-                        startDate = start,
-                        endDate = end,
+                        rollingDays = days.toInt(),
                         thresholdPercent = threshold.toDoubleOrNull() ?: 5.0
-                    ))
+                    )
+                    onSave(rule)
                 }
             ) {
                 Text("Save")
@@ -119,5 +127,3 @@ fun SetAlertDialog(
 fun LocalDate.toMillis(): Long =
     this.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-fun Long.toLocalDate(): LocalDate =
-    java.time.Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()

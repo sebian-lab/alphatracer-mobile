@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,6 +30,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.compose.AppTheme
 import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.ui.Alert.AlertListView
+import com.main.alphatracer.ui.Alert.Data.AlertDataStore
 import com.main.alphatracer.ui.Alert.scheduleStockWorker
 import com.main.alphatracer.ui.Portfolio.PortfolioUi
 import com.main.alphatracer.ui.StockUi.StockDetailScreen
@@ -58,7 +61,7 @@ class MainActivity : FragmentActivity() {
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
                 val currentScreen by mainViewModel.currentScreen.collectAsState()
                 val selectedTicker by mainViewModel.selectedTicker.collectAsState()
-
+                val alertDataStore = AlertDataStore(application)
 
                 if (!isLoggedIn) {
 
@@ -89,6 +92,7 @@ class MainActivity : FragmentActivity() {
                                                     Screen.Market -> Icons.AutoMirrored.Filled.TrendingUp
                                                     Screen.Portfolio -> Icons.Default.PieChart
                                                     Screen.Profile -> Icons.Default.Person
+                                                    Screen.Alert -> Icons.Default.Warning
                                                 },
                                                 contentDescription = screen.name
                                             )
@@ -118,6 +122,9 @@ class MainActivity : FragmentActivity() {
                                 )
                                 Screen.Profile -> UserUi(
                                     onLogout = { mainViewModel.logout() }
+                                )
+                                Screen.Alert -> AlertListView(
+                                    dataStore = alertDataStore
                                 )
                             }
                             selectedTicker?.let { ticker ->

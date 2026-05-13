@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 enum class Screen {
-    Portfolio, Profile, Market
+    Portfolio, Profile, Market, Alert
 }
 class MainViewModel : ViewModel() {
     private val _isLoggedIn = MutableStateFlow(false)

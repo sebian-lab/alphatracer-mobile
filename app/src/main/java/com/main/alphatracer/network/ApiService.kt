@@ -26,7 +26,8 @@ interface ApiService {
         @Field("username") email: String,
         @Field("password") password: String
     ): LoginResponse
-
+    @POST("api/v1/auth/refresh")
+    suspend fun refreshToken(@Header("Authorization") refreshToken: String): LoginResponse
     @POST("api/v1/auth/register")
     suspend fun register(@Body request: RegisterRequest): LoginResponse
     data class LoginResponse(

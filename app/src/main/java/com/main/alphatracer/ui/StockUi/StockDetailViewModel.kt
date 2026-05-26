@@ -49,7 +49,31 @@ class StockDetailViewModel(
             }
         }
     }
+    fun buyStock(ticker: String, quantity: Int, price: Double, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager.getToken() ?: throw Exception("Not logged in")
+                val request = TransactionRequest(ticker, "buy", quantity, price)
+                portfolioRepository.addTransaction(token, request)
+                onSuccess()
+            } catch (e: Exception) {
+                // Handle error (e.g., show toast)
+            }
+        }
+    }
 
+    fun sellStock(ticker: String, quantity: Int, price: Double, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager.getToken() ?: throw Exception("Not logged in")
+                val request = TransactionRequest(ticker, "sell", quantity, price)
+                portfolioRepository.addTransaction(token, request)
+                onSuccess()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
     fun addToPortfolio(ticker: String, quantity: Int, price: Double) {
         viewModelScope.launch {
             try {

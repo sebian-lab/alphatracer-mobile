@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stock.alphatracer.ui.viewmodel.MainViewModel
 
 
 @Composable
@@ -38,10 +40,15 @@ fun PortfolioUi(
 
     )
 ){
+    val mainViewModel: MainViewModel = viewModel()
     LaunchedEffect(Unit) {
         viewModel.loadPortfolio()
     }
-
+    LaunchedEffect(Unit) {
+        mainViewModel.refreshPortfolio.collect {
+            viewModel.loadPortfolio()
+        }
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (uiState) {
@@ -79,8 +86,8 @@ private fun PortfolioContent(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item {
             Card(
@@ -106,40 +113,28 @@ private fun PortfolioContent(
 @Composable
 private fun HoldingItem(holding: Holding, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(2.dp)
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1C1E))
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(holding.ticker, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text(
-                    holding.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,maxLines = 1, // Keep it on one line
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(holding.ticker, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("${holding.quantity} | $${String.format("%,.2f", holding.currentPrice)}",
+                    color = Color.Gray, fontSize = 14.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
+                Text("$${String.format("%,.2f", holding.quantity * holding.currentPrice)}",
+                    color = Color.White, fontWeight = FontWeight.Bold)
+                // Assuming you add a 'change' field to your Holding model
                 Text(
-                    "$${String.format("%.2f", holding.currentPrice)}",
-                    fontWeight = FontWeight.SemiBold,
-                    softWrap = false)
-                Text(
-                    "${holding.quantity} shares",
-                    style = MaterialTheme.typography.bodySmall,
-                    softWrap = false)
-                val total = holding.quantity * holding.currentPrice
-                Text(
-                    "$${String.format("%,.2f", total)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    softWrap = false)
+                    text = "${if (holding.gainLossPct >= 0) "+" else ""}${String.format("%.2f", holding.gainLossPct)}%",
+                    color = if (holding.gainLossPct >= 0) Color(0xFF00E676) else Color(0xFFFF5252),
+                    fontSize = 12.sp
+                )
             }
         }
     }

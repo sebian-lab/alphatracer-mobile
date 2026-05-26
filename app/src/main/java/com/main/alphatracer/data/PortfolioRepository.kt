@@ -13,12 +13,17 @@ class PortfolioRepository(
 ) {
     suspend fun getUserHoldings(token: String): List<Holding> {
         val response: PortfolioResponse = api.getPortfolio("Bearer $token")
+
         return response.holdings.map {
+            val gainLossPct = if (it.average_price > 0) {
+                ((it.current_price - it.average_price) / it.average_price) * 100
+            } else 0.0
             Holding(
                 ticker = it.stock_ticker,
                 name = it.stock_name,
                 quantity = it.quantity,
-                currentPrice = it.current_price
+                currentPrice = it.current_price,
+                gainLossPct = gainLossPct
             )
         }
     }

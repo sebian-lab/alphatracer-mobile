@@ -130,7 +130,8 @@ class MainActivity : FragmentActivity() {
                             selectedTicker?.let { ticker ->
                                 StockDetailScreen(
                                     ticker = ticker,
-                                    onBack = { mainViewModel.clearSelectedTicker()
+                                    onBack = { mainViewModel.clearSelectedTicker()},
+                                    onPortfolioRefresh = { mainViewModel.requestPortfolioRefresh()
 
                                     }
                                 )

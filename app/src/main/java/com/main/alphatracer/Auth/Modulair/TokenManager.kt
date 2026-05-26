@@ -9,6 +9,7 @@ import androidx.biometric.BiometricManager
 
 class TokenManager private constructor(context: Context) {
     private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("auth", Context.MODE_PRIVATE)
+    fun getRefreshToken(): String? = prefs.getString("refresh_token", null)
     fun isBiometricEnabled(): Boolean = prefs.getBoolean("biometric_enabled", false)
     fun isBiometricAvailable(context: Context): Boolean {
         val biometricManager = BiometricManager.from(context)
@@ -40,9 +41,10 @@ class TokenManager private constructor(context: Context) {
     fun getUserName(): String = prefs.getString("user_name", "User") ?: "User"
     fun getUserEmail(): String = prefs.getString("user_email", "") ?: ""
 
-    fun saveUserDetails(token: String, name: String, email: String) {
+    fun saveUserDetails(token: String, refreshToken: String, name: String, email: String) {
         prefs.edit()
             .putString("access_token", token)
+            .putString("refresh_token", refreshToken)
             .putString("user_name", name)
             .putString("user_email", email)
             .apply()

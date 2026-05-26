@@ -88,6 +88,7 @@ import com.main.alphatracer.ui.StockUi.switch.AnalysisTypeSelector
 fun StockDetailScreen(
     ticker: String,
     onBack: () -> Unit,
+    onPortfolioRefresh: () -> Unit,
     viewModel: StockDetailViewModel = viewModel()
 ) {
     LaunchedEffect(ticker) {
@@ -132,8 +133,13 @@ fun StockDetailScreen(
                     StockDetailContent(
                         metrics = success.metrics,
                         analysis = success.analysis,
-                        onAddToPortfolio = { ticker, quantity, price ->
-                            viewModel.addToPortfolio(ticker, quantity, price)
+                        onBuy = { quantity, price ->
+                            viewModel.buyStock(ticker, quantity, price)
+                            onPortfolioRefresh()               // <-- trigger refresh
+                        },
+                        onSell = { quantity, price ->
+                            viewModel.sellStock(ticker, quantity, price)
+                            onPortfolioRefresh()               // <-- trigger refresh
                         }
                     )
                 }
@@ -167,30 +173,124 @@ fun StockDetailScreen(
         }
     }
 }
+@Composable
+fun TransactionDialog(
+    ticker: String,
+    type: String, // "buy" or "sell"
+    currentPrice: Double,
+    onDismiss: () -> Unit,
+    onConfirm: (quantity: Int, price: Double) -> Unit
+) {
+    var quantity by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf(String.format("%.2f", currentPrice)) }
+    var errors by remember { mutableStateOf(AddDialogErrors()) }
+    val focusManager = LocalFocusManager.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "${type.uppercase()} $ticker", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = quantity,
+                    onValueChange = { quantity = it.filter(Char::isDigit); errors = errors.copy(quantity = null) },
+                    label = { Text("Quantity") },
+                    isError = errors.quantity != null,
+                    supportingText = { if (errors.quantity != null) Text(errors.quantity!!) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = price,
+                    onValueChange = {
+                        price = it.replace(',', '.').filter { c -> c.isDigit() || c == '.' }
+                            .let { if (it.count { c -> c == '.' } > 1) price else it }
+                        errors = errors.copy(price = null)
+                    },
+                    label = { Text("Price per share (USD)") },
+                    isError = errors.price != null,
+                    supportingText = { if (errors.price != null) Text(errors.price!!) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    focusManager.clearFocus()
+                    val q = quantity.toIntOrNull()
+                    val p = price.toDoubleOrNull()
+                    when {
+                        quantity.isBlank() -> errors = errors.copy(quantity = "Required")
+                        q == null || q <= 0 -> errors = errors.copy(quantity = "Positive number")
+                        price.isBlank() -> errors = errors.copy(price = "Required")
+                        p == null || p <= 0 -> errors = errors.copy(price = "Positive number")
+                        else -> onConfirm(q, p)
+                    }
+                }
+            ) {
+                Text("Confirm ${type.uppercase()}")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        shape = RoundedCornerShape(28.dp)
+    )
+}
+@Composable
+fun BuySellActions(onBuyClick: () -> Unit, onSellClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(
+            onClick = onBuyClick,
+            modifier = Modifier.weight(1f).height(40.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = Color(0xFF00E676)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Color(0xFF00E676))
+        ) { Text("BUY", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+
+        Button(
+            onClick = onSellClick,
+            modifier = Modifier.weight(1f).height(40.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = Color(0xFFFF5252)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Color(0xFFFF5252))
+        ) { Text("SELL", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+    }
+}
 
 @Composable
 fun StockDetailContent(
     metrics: MetricsResponse,
     analysis: MarketAnalysisResponse,
-    onAddToPortfolio: (ticker: String, quantity: Int, price: Double) -> Unit
+    onBuy: (quantity: Int, price: Double) -> Unit,
+    onSell: (quantity: Int, price: Double) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(StockDetailTab.Analysis) }
     val quote = analysis.quote
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showTransactionDialog by remember { mutableStateOf(false) }
+    var transactionType by remember { mutableStateOf("buy") }
     var showAlertDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val alertDataStore = remember { AlertDataStore(context) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        contentPadding = PaddingValues(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ),
@@ -200,14 +300,14 @@ fun StockDetailContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = quote.ticker,
-                            fontSize = 28.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
@@ -222,7 +322,7 @@ fun StockDetailContent(
                     Column(modifier = Modifier.widthIn(min = 100.dp),horizontalAlignment = Alignment.End) {
                         Text(
                             text = "${quote.currency} ${String.format("%.2f", quote.price)}",
-                            fontSize = 26.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false
@@ -268,7 +368,7 @@ fun StockDetailContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp), // Increased height for better visibility
+                    .height(220.dp),
                 shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
@@ -311,9 +411,11 @@ fun StockDetailContent(
                             initialZoom = Zoom.Content
                         )
                     )
+
                 }
             }
         }
+
         item {
             // Logic moved to analyzeUi package
             AnalysisTypeSelector(
@@ -326,22 +428,7 @@ fun StockDetailContent(
 
 
 
-        item {
-            Button(
-                onClick = { showAddDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.TrendingUp,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add to Portfolio", fontWeight = FontWeight.SemiBold)
-            }
-        }
+
 
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
@@ -354,14 +441,37 @@ fun StockDetailContent(
         }
 
     }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 8.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        BuySellActions(
+            modifier = Modifier.padding(12.dp),
+            onBuyClick = {
+                transactionType = "buy"
+                showTransactionDialog = true
+            },
+            onSellClick = {
+                transactionType = "sell"
+                showTransactionDialog = true
+            }
+        )
+    }
 
-    if (showAddDialog) {
-        AddToPortfolioDialog(
+    if (showTransactionDialog) {
+        TransactionDialog(
             ticker = quote.ticker,
-            onDismiss = { showAddDialog = false },
-            onAdd = { quantity, price ->
-                onAddToPortfolio(quote.ticker, quantity, price)
-                showAddDialog = false
+            type = transactionType,
+            currentPrice = quote.price,
+            onDismiss = { showTransactionDialog = false },
+            onConfirm = { quantity, price ->
+                if (transactionType == "buy") {
+                    onBuy(quantity, price)
+                } else {
+                    onSell(quantity, price)
+                }
+                showTransactionDialog = false
             }
         )
     }
@@ -378,6 +488,7 @@ fun StockDetailContent(
                 showAlertDialog = false
             }
         )
+
     }
 }
 

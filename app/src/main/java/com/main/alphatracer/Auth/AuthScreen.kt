@@ -282,6 +282,7 @@ fun AuthScreen(
                                 try {
                                     tokenManager.saveUserDetails(
                                         token = loginResponse.access_token,
+                                        refreshToken = loginResponse.refresh_token,
                                         name = fullName.ifEmpty { email.split("@")[0] },
                                         email = email
                                     )

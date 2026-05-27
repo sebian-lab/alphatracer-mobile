@@ -20,6 +20,7 @@ object RetrofitClient {
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         })
+        .addInterceptor(AuthInterceptor())
         .build()
 
     val apiService: ApiService by lazy {
@@ -57,15 +58,21 @@ object RetrofitClient {
         private fun refreshAccessToken(): String? = runBlocking {
             val refreshToken = TokenManager.getInstance().getRefreshToken() ?: return@runBlocking null
             try {
+                // Create a temporary API service without interceptor to avoid recursion
                 val api = Retrofit.Builder()
                     .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
                     .create(ApiService::class.java)
                 val response = api.refreshToken("Bearer $refreshToken")
+                // Save the new access token
                 TokenManager.getInstance().saveToken(response.access_token)
                 response.access_token
-            } catch (e: Exception) { null }
+            } catch (e: Exception) {
+                // Refresh failed – clear token and force logout
+                TokenManager.getInstance().clear()
+                null
+            }
         }
     }
 }

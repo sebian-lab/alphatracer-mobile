@@ -102,14 +102,7 @@ class MainActivity : FragmentActivity() {
                             }
                         },
                         floatingActionButton = {
-                            if (currentScreen == Screen.Portfolio) {
-                                ExtendedFloatingActionButton(
-                                    onClick = { mainViewModel.setShowAddTransaction(true) },
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    icon = { Icon(Icons.Default.Add, null) },
-                                    text = { Text("Add Transaction") }
-                                )
-                            }
+
                         }
                     ) { innerPadding ->
                         Box(modifier = Modifier.padding(innerPadding)) {
@@ -118,7 +111,10 @@ class MainActivity : FragmentActivity() {
                                     onStockClick = { mainViewModel.setSelectedTicker(it) }
                                 )
                                 Screen.Portfolio -> PortfolioUi(
-                                    onStockClick = { mainViewModel.setSelectedTicker(it) }
+                                    onStockClick = {
+                                        mainViewModel.setSelectedTicker(it)
+                                    },
+                                    alertDataStore = alertDataStore
                                 )
                                 Screen.Profile -> UserUi(
                                     onLogout = { mainViewModel.logout() }

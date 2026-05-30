@@ -34,7 +34,9 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
     private val dataStore = AlertDataStore(applicationContext)
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) @androidx.annotation.RequiresPermission(
+        android.Manifest.permission.POST_NOTIFICATIONS
+    ) {
         val rules = dataStore.getRules()
         val now = System.currentTimeMillis()
         val cooldownMs = 3600_000L

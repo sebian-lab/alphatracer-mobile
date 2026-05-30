@@ -1,6 +1,6 @@
 package com.main.alphatracer.network
 
-import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.auth.Modulair.TokenManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -12,25 +12,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://twelve-sale-asp-last.trycloudflare.com/"
+    private const val BASE_URL = "https://modules-tops-legs-furnishings.trycloudflare.com"
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        })
-        .addInterceptor(AuthInterceptor())
-        .build()
 
-    val apiService: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
-    }
     private class AuthInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             var request = chain.request()
@@ -41,7 +25,9 @@ object RetrofitClient {
                     .build()
             }
             val response = chain.proceed(request)
+
             if (response.code == 401) {
+                response.close()
                 synchronized(this) {
                     val newToken = refreshAccessToken()
                     if (newToken != null) {
@@ -75,4 +61,22 @@ object RetrofitClient {
             }
         }
     }
+        private val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
+            .addInterceptor(AuthInterceptor())
+            .build()
+        val apiService: ApiService by lazy {
+            Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(ApiService::class.java)
+        }
+
+
 }

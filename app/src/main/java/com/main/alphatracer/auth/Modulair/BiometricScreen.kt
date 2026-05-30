@@ -1,4 +1,4 @@
-package com.main.alphatracer.Auth.Modulair
+package com.main.alphatracer.auth.Modulair
 
 import android.util.Log
 import androidx.biometric.BiometricManager

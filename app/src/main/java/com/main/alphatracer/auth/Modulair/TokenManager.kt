@@ -1,4 +1,4 @@
-package com.main.alphatracer.Auth.Modulair
+package com.main.alphatracer.auth.Modulair
 
 
 // hoger
@@ -32,14 +32,29 @@ class TokenManager private constructor(context: Context) {
         @Volatile
         private var instance: TokenManager? = null
 
-        fun getInstance(context: Context? = null): TokenManager {
-            return instance ?: synchronized(this) {
-                instance ?: TokenManager(context!!).also { instance = it }
+        /**
+         * Must be called once, before any call to getInstance().
+         * Typically in MainActivity.onCreate().
+         */
+        fun init(context: Context) {
+            if (instance == null) {
+                synchronized(this) {
+                    if (instance == null) {
+                        instance = TokenManager(context.applicationContext)
+                    }
+                }
             }
+        }
+
+        fun getInstance(): TokenManager {
+            return instance ?: throw IllegalStateException(
+                "TokenManager not initialized. Call TokenManager.init(context) first."
+            )
         }
     }
     fun getUserName(): String = prefs.getString("user_name", "User") ?: "User"
     fun getUserEmail(): String = prefs.getString("user_email", "") ?: ""
+
 
     fun saveUserDetails(token: String, refreshToken: String, name: String, email: String) {
         prefs.edit()

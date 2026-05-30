@@ -43,8 +43,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun AlertListView(
-    dataStore: AlertDataStore,
-    onDelete: (AlertRule) -> Unit = {}
+    dataStore: AlertDataStore
 ) {
     val rules by dataStore.getRulesFlow().collectAsState(initial = emptyList())
 

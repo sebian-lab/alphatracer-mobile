@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Alphatracer">
         <activity
-            android:name="com.stock.alphatracer.MainActivity"
+            android:name="com.main.alphatracer.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Alphatracer">

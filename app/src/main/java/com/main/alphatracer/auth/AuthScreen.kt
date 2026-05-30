@@ -1,4 +1,4 @@
-package com.stock.alphatracer.ui.screens
+package com.main.alphatracer.auth
 
 import android.util.Log
 import android.util.Patterns
@@ -41,11 +41,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import com.main.alphatracer.Auth.Modulair.BiometricAuthenticator
-import com.main.alphatracer.Auth.Modulair.BiometricAuthenticator.authenticate
-import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.auth.Modulair.BiometricAuthenticator.authenticate
+import com.main.alphatracer.auth.Modulair.TokenManager
 import com.main.alphatracer.R
 import com.main.alphatracer.network.ApiService
+
 import com.main.alphatracer.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,7 +75,7 @@ fun AuthScreen(
             isBiometricUnlocking = true
             delay(300)
 
-            BiometricAuthenticator.authenticate(
+            authenticate(
                 activity = activity,
                 title = "Unlock AlphaTracer",
                 onSuccess = {
@@ -277,7 +277,10 @@ fun AuthScreen(
 
 
                             withContext(Dispatchers.Main) {
-                                Log.d("AuthScreen", "Login successful - saving token and navigating")
+                                Log.d(
+                                    "AuthScreen",
+                                    "Login successful - saving token and navigating"
+                                )
 
                                 try {
                                     tokenManager.saveUserDetails(
@@ -296,7 +299,10 @@ fun AuthScreen(
                                 isLoading = false
 
 
-                                if (!tokenManager.isBiometricEnabled() && tokenManager.isBiometricAvailable(context) && activity != null) {
+                                if (!tokenManager.isBiometricEnabled() && tokenManager.isBiometricAvailable(
+                                        context
+                                    ) && activity != null
+                                ) {
                                     authenticate(
                                         activity = activity,
                                         title = "Enable Biometric Login",
@@ -312,7 +318,6 @@ fun AuthScreen(
                                 } else {
                                     onLoginSuccess()
                                 }
-
 
 
                             }
@@ -331,20 +336,12 @@ fun AuthScreen(
                                 isLoading = false
                             }
                         }
+
                     }
 
-                    // Helper to keep your coroutine readable
-                    fun parseError(errorBody: String?): String {
-                        return try {
-                            if (errorBody?.contains("detail") == true) {
-                                errorBody.substringAfter("detail\":\"").substringBefore("\"")
-                            } else {
-                                errorBody ?: "Authentication failed"
-                            }
-                        } catch (ex: Exception) {
-                            "Authentication failed"
-                        }
-                    }
+
+
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()

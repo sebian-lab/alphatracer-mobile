@@ -415,6 +415,19 @@ fun StockDetailContent(
                 }
             }
         }
+        item {
+            BuySellActions(
+                modifier = Modifier.padding(12.dp),
+                onBuyClick = {
+                    transactionType = "buy"
+                    showTransactionDialog = true
+                },
+                onSellClick = {
+                    transactionType = "sell"
+                    showTransactionDialog = true
+                }
+            )
+        }
 
         item {
             // Logic moved to analyzeUi package
@@ -441,23 +454,7 @@ fun StockDetailContent(
         }
 
     }
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 8.dp,
-        color = MaterialTheme.colorScheme.surface
-    ) {
-        BuySellActions(
-            modifier = Modifier.padding(12.dp),
-            onBuyClick = {
-                transactionType = "buy"
-                showTransactionDialog = true
-            },
-            onSellClick = {
-                transactionType = "sell"
-                showTransactionDialog = true
-            }
-        )
-    }
+
 
     if (showTransactionDialog) {
         TransactionDialog(

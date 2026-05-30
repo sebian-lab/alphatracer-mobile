@@ -89,17 +89,6 @@ private fun ProfileContent(user: User, onLogout: () -> Unit) {
         Text(user.name, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Text(user.email, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedButton(
-            onClick = { /* Navigate to settings */ },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Settings")
-        }
-
         Button(
             onClick = onLogout,
             modifier = Modifier.fillMaxWidth(),

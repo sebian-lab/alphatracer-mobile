@@ -49,7 +49,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.main.alphatracer.model.AlertRule
 import com.main.alphatracer.ui.Alert.Data.AlertDataStore
 import com.main.alphatracer.ui.Portfolio.BulkAlert.BulkSetAlertDialog
-import com.stock.alphatracer.ui.viewmodel.MainViewModel
+import com.main.alphatracer.ui.ViewModel.MainViewModel
+
 import kotlinx.coroutines.launch
 
 

@@ -1,9 +1,9 @@
-// com.stock.alphatracer.ui.viewmodel/StockDetailViewModel.kt
+
 package com.main.alphatracer.ui.StockUi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.auth.Modulair.TokenManager
 import com.main.alphatracer.data.PortfolioRepository
 import com.main.alphatracer.data.StockRepository
 import com.main.alphatracer.model.MarketAnalysisResponse

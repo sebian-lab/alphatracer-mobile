@@ -1,5 +1,5 @@
 // MainActivity.kt
-package com.stock.alphatracer
+package com.main.alphatracer
 
 
 import android.os.Bundle
@@ -10,14 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -29,7 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.compose.AppTheme
-import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.auth.AuthScreen
+import com.main.alphatracer.auth.Modulair.TokenManager
 import com.main.alphatracer.ui.Alert.AlertListView
 import com.main.alphatracer.ui.Alert.Data.AlertDataStore
 import com.main.alphatracer.ui.Alert.scheduleStockWorker
@@ -37,10 +35,9 @@ import com.main.alphatracer.ui.Portfolio.PortfolioUi
 import com.main.alphatracer.ui.StockUi.StockDetailScreen
 import com.main.alphatracer.ui.market.MarketScreen
 import com.main.alphatracer.ui.user.UserUi
-import com.stock.alphatracer.ui.AlphaTracerAppBar
-import com.stock.alphatracer.ui.screens.AuthScreen
-import com.stock.alphatracer.ui.viewmodel.MainViewModel
-import com.stock.alphatracer.ui.viewmodel.Screen
+import com.main.alphatracer.ui.AlphaTracerAppBar
+import com.main.alphatracer.ui.ViewModel.MainViewModel
+import com.main.alphatracer.ui.ViewModel.Screen
 
 
 class MainActivity : FragmentActivity() {
@@ -49,8 +46,8 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        val tokenManager = TokenManager.getInstance(applicationContext)
+        TokenManager.init(applicationContext)
+        val tokenManager = TokenManager.getInstance()
 
         if (tokenManager.getToken() != null) {
             scheduleStockWorker(this)
@@ -67,7 +64,7 @@ class MainActivity : FragmentActivity() {
 
                     AuthScreen(
                         onLoginSuccess = { mainViewModel.login() },
-                        tokenManager = TokenManager.getInstance()
+                        tokenManager = tokenManager
                     )
                 }else {
                     Scaffold(
@@ -123,15 +120,7 @@ class MainActivity : FragmentActivity() {
                                     dataStore = alertDataStore
                                 )
                             }
-                            selectedTicker?.let { ticker ->
-                                StockDetailScreen(
-                                    ticker = ticker,
-                                    onBack = { mainViewModel.clearSelectedTicker()},
-                                    onPortfolioRefresh = { mainViewModel.requestPortfolioRefresh()
 
-                                    }
-                                )
-                            }
 
 
                         }

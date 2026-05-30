@@ -1,10 +1,10 @@
 // com.stock.alphatracer.ui.viewmodel.MainViewModel
-package com.stock.alphatracer.ui.viewmodel
+package com.main.alphatracer.ui.ViewModel
 
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.auth.Modulair.TokenManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

@@ -2,7 +2,7 @@ package com.main.alphatracer.ui.user
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import com.main.alphatracer.Auth.Modulair.TokenManager
+import com.main.alphatracer.auth.Modulair.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 sealed class UserUiState {
@@ -11,7 +11,7 @@ sealed class UserUiState {
     data class Error(val message: String) : UserUiState()
 }
 class UserViewModel(application: Application) : AndroidViewModel(application) {
-    private val tokenManager = TokenManager.getInstance(application)
+    private val tokenManager = TokenManager.getInstance()
 
     private val _uiState = MutableStateFlow<UserUiState>(UserUiState.Loading)
     val uiState: StateFlow<UserUiState> = _uiState

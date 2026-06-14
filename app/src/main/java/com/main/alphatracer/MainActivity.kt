@@ -38,7 +38,7 @@ import com.main.alphatracer.ui.user.UserUi
 import com.main.alphatracer.ui.AlphaTracerAppBar
 import com.main.alphatracer.ui.ViewModel.MainViewModel
 import com.main.alphatracer.ui.ViewModel.Screen
-
+import com.main.alphatracer.ui.StockUi.StockDetailScreen
 
 class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -107,19 +107,31 @@ class MainActivity : FragmentActivity() {
                                 Screen.Market -> MarketScreen(
                                     onStockClick = { mainViewModel.setSelectedTicker(it) }
                                 )
+
                                 Screen.Portfolio -> PortfolioUi(
                                     onStockClick = {
                                         mainViewModel.setSelectedTicker(it)
                                     },
                                     alertDataStore = alertDataStore
                                 )
+
                                 Screen.Profile -> UserUi(
                                     onLogout = { mainViewModel.logout() }
                                 )
+
                                 Screen.Alert -> AlertListView(
                                     dataStore = alertDataStore
                                 )
                             }
+                                selectedTicker?.let { ticker ->
+                                    StockDetailScreen(
+                                        ticker = ticker,
+                                        onBack = { mainViewModel.clearSelectedTicker() },
+                                        onPortfolioRefresh = { mainViewModel.requestPortfolioRefresh() }
+                                    )
+
+                                }
+
 
 
 

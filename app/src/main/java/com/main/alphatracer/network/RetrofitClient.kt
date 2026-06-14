@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://modules-tops-legs-furnishings.trycloudflare.com"
+    private const val BASE_URL = "https://sculpture-marker-adequate-respective.trycloudflare.com"
 
 
     private class AuthInterceptor : Interceptor {

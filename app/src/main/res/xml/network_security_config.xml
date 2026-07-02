@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Force HTTPS globally by disabling cleartext traffic -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Configure domain specific settings and demonstrate certificate pinning -->
+    <domain-config>
+        <!-- For our TryCloudflare API backend -->
+        <domain includeSubdomains="true">sculpture-marker-adequate-respective.trycloudflare.com</domain>
+        <pin-set expiration="2027-01-01">
+            <!-- Example certificate pin (SHA-256 hash of the public key) -->
+            <!-- This is a demo placeholder pin to show how certificate pinning is implemented -->
+            <pin digest="SHA-256">9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08</pin>
+            <!-- Backup Pin -->
+            <pin digest="SHA-256">0000000000000000000000000000000000000000000=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>

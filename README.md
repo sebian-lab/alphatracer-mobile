@@ -71,12 +71,34 @@ app/src/main/java/com/main/alphatracer/
 
 ## 📅 Recente Ontwikkelingen
 
+### DevOps & Cybersecurity Toevoegingen
 
+#### 🛠 Automated Build Pipeline (CI/CD)
+Er is een GitHub Actions-workflow geconfigureerd onder [build.yml](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/.github/workflows/build.yml). Bij elke push of pull-request naar de `main` branch:
+1. Wordt de code uitgecheckt en wordt JDK 17 opgezet.
+2. Worden er automatische kwaliteitscontroles uitgevoerd via `./gradlew lintDebug`.
+3. Wordt de debug APK gecompileerd via `./gradlew assembleDebug`.
+4. Worden de resulterende APK- en lint-rapport-bestanden opgeslagen als GitHub artifacts.
+
+#### 🔐 Secure Secrets Management
+Om te voorkomen dat gevoelige netwerkkonfiguraties of API base URLs hardcoded in de codebase worden opgeslagen:
+1. Wordt de `API_BASE_URL` gedefinieerd in een lokaal bestand genaamd `local.properties` (dit bestand is uitgesloten van Git via `.gitignore`).
+2. Gradle injecteert deze waarde tijdens het compileerproces via `buildConfigField` in de automatisch gegenereerde `BuildConfig`-klasse.
+3. In [RetrofitClient.kt](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/app/src/main/java/com/main/alphatracer/network/RetrofitClient.kt) wordt verwezen naar `BuildConfig.API_BASE_URL` in plaats van een hardcoded string.
+4. Mocht het project op CI (GitHub Actions) gebouwd worden waar `local.properties` niet aanwezig is, dan valt de build-script automatisch terug naar de standaard Cloudflare Tunnel URL om build-falen te voorkomen.
+
+#### 🌐 Network Security Config
+Om de netwerkcommunicatie te beveiligen:
+1. Is er een [network_security_config.xml](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/app/src/main/res/xml/network_security_config.xml) toegevoegd die expliciet **cleartext traffic (HTTP) verbiedt** en HTTPS dwingt voor alle verbindingen.
+2. Bevat de configuratie een implementatie-voorbeeld van **Certificate Pinning** voor de API-backend (`sculpture-marker-adequate-respective.trycloudflare.com`) om Man-in-the-Middle (MitM) aanvallen te voorkomen.
+3. De configuratie is correct gekoppeld in het [AndroidManifest.xml](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/app/src/main/AndroidManifest.xml).
+
+#### 🛡 Code Obfuscation (ProGuard/R8)
+Om reverse-engineering door aanvallers te bemoeilijken, is code-obfuscatie ingeschakeld via [proguard-rules.pro](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/app/proguard-rules.pro):
+- **Klasse- en Ledenaanpassing:** R8/ProGuard hernoemt klassen, variabelen en methoden naar onbetekenende letters (bijv. `a`, `b`, `c`), tenzij ze expliciet behouden moeten blijven.
+- **Serialization & Data Models:** De regels behouden `@SerializedName` annotaties van Gson en de data model-klassen in `com.main.alphatracer.model` om te voorkomen dat JSON-deserialisatie faalt als gevolg van hernoemde velden.
+- **Retrofit HTTP-methoden:** Specifieke regels behouden de methodesignaturen van interfaces met `@retrofit2.http.*` annotaties.
 
 ---
 
 *Dit project wordt actief ontwikkeld en onderhouden door het **sebian-lab** .*
-
----
-
-*Zou je graag willen dat ik nog specifieke installatie-instructies toevoeg of een sectie over de API-integratie uitbreid?*

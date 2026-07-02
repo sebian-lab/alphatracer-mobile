@@ -1,5 +1,6 @@
 package com.main.alphatracer.network
 
+import com.main.alphatracer.BuildConfig
 import com.main.alphatracer.auth.Modulair.TokenManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -12,7 +13,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://sculpture-marker-adequate-respective.trycloudflare.com"
+    private val BASE_URL = BuildConfig.API_BASE_URL
 
 
     private class AuthInterceptor : Interceptor {

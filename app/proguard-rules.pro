@@ -12,10 +12,25 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep line number and source file details in stack traces for crash reporting/debugging
+-keepattributes SourceFile,LineNumberTable
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Rename the source file to obfuscate the original source name
+-renamesourcefileattribute SourceFile
+
+# Gson rules to preserve SerializedName annotations and serialized fields
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Keep the data models package intact to allow proper Gson serialization/deserialization
+-keep class com.main.alphatracer.model.** { *; }
+
+# Retrofit rules
+-dontwarn retrofit2.**
+-keep class retrofit2.** { *; }
+-keepattributes RuntimeVisibleDeclarations,RuntimeVisibleParameterDeclarations
+-keepclassmembers,allowobfuscation interface * {
+    @retrofit2.http.* <methods>;
+}

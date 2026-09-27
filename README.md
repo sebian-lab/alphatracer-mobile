@@ -93,11 +93,7 @@ Om de netwerkcommunicatie te beveiligen:
 2. Bevat de configuratie een implementatie-voorbeeld van **Certificate Pinning** voor de API-backend (`sculpture-marker-adequate-respective.trycloudflare.com`) om Man-in-the-Middle (MitM) aanvallen te voorkomen.
 3. De configuratie is correct gekoppeld in het [AndroidManifest.xml](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/app/src/main/AndroidManifest.xml).
 
-#### 🛡 Code Obfuscation (ProGuard/R8)
-Om reverse-engineering door aanvallers te bemoeilijken, is code-obfuscatie ingeschakeld via [proguard-rules.pro](file:///c:/Users/xemon/Downloads/fd/intern/AlphaTracer/app/proguard-rules.pro):
-- **Klasse- en Ledenaanpassing:** R8/ProGuard hernoemt klassen, variabelen en methoden naar onbetekenende letters (bijv. `a`, `b`, `c`), tenzij ze expliciet behouden moeten blijven.
-- **Serialization & Data Models:** De regels behouden `@SerializedName` annotaties van Gson en de data model-klassen in `com.main.alphatracer.model` om te voorkomen dat JSON-deserialisatie faalt als gevolg van hernoemde velden.
-- **Retrofit HTTP-methoden:** Specifieke regels behouden de methodesignaturen van interfaces met `@retrofit2.http.*` annotaties.
+
 
 ---
 
